@@ -1,0 +1,158 @@
+:root {
+    --doge-color: #d9a648;
+    --pepe-color: #5cb85c;
+    --canvas-bg: #f5f5f5;
+    --dark-bg: #121212;
+  }
+  
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  .canvas-container {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    overflow: hidden;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    background-color: var(--canvas-bg);
+  }
+  
+  .canvas-item {
+    position: absolute;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .canvas-item:hover {
+    transform: scale(1.05);
+  }
+  
+  .doge-team {
+    border: 2px solid var(--doge-color);
+  }
+  
+  .pepe-team {
+    border: 2px solid var(--pepe-color);
+  }
+  
+  .meme-generator-container {
+    padding: 20px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .tribe-battle-container {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+  }
+  
+  .tribe-battle-side {
+    flex: 1;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .doge-side {
+    background-color: rgba(217, 166, 72, 0.2);
+    margin-right: 10px;
+  }
+  
+  .pepe-side {
+    background-color: rgba(92, 184, 92, 0.2);
+    margin-left: 10px;
+  }
+  
+  .progress-container {
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+  }
+  
+  .doge-progress {
+    background-color: var(--doge-color);
+  }
+  
+  .pepe-progress {
+    background-color: var(--pepe-color);
+  }
+  
+  .leaderboard-container {
+    margin-top: 20px;
+  }
+  
+  .leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .leaderboard-rank {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .leaderboard-address {
+    flex: 1;
+    font-family: monospace;
+  }
+  
+  .leaderboard-score {
+    font-weight: bold;
+  }
+  
+  .theme-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--doge-color), var(--pepe-color));
+    color: white;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --canvas-bg: #2a2a2a;
+    }
+    
+    body {
+      background-color: var(--dark-bg);
+      color: white;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .tribe-battle-container {
+      flex-direction: column;
+    }
+    
+    .tribe-battle-side {
+      margin: 10px 0;
+    }
+    
+    .doge-side {
+      margin-right: 0;
+      margin-bottom: 10px;
+    }
+    
+    .pepe-side {
+      margin-left: 0;
+    }
+  }
