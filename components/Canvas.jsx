@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAccount } from "wagmi";
+import { subscribeToCanvasItems } from "../firebase";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 function Canvas() {
   const { address } = useAccount();
@@ -12,20 +14,58 @@ function Canvas() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    // Load canvas items from global state
-    if (window.memeCanvasItems) {
-      setCanvasItems(window.memeCanvasItems);
-    }
-    
     // Add event listener for window resize
     window.addEventListener('resize', handleResize);
     
     // Initial resize
     handleResize();
     
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    // Subscribe to real-time updates from Firebase
+    try {
+      const unsubscribe = subscribeToCanvasItems((items) => {
+        setCanvasItems(items);
+        // Update global state for backward compatibility
+        window.memeCanvasItems = items;
+        // Save to localStorage for offline access
+        localStorage.setItem('memeWarCanvas', JSON.stringify(items));
+      });
+      
+      // Fallback to localStorage if Firebase fails to load
+      if (window.memeCanvasItems) {
+        setCanvasItems(window.memeCanvasItems);
+      } else {
+        const savedMemes = localStorage.getItem('memeWarCanvas');
+        if (savedMemes) {
+          try {
+            const parsedMemes = JSON.parse(savedMemes);
+            setCanvasItems(parsedMemes);
+            window.memeCanvasItems = parsedMemes;
+          } catch (error) {
+            console.error("Error parsing saved memes:", error);
+            setCanvasItems([]);
+            window.memeCanvasItems = [];
+          }
+        } else {
+          setCanvasItems([]);
+          window.memeCanvasItems = [];
+        }
+      }
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        unsubscribe(); // Unsubscribe from Firebase on component unmount
+      };
+    } catch (error) {
+      console.error("Error setting up Firebase subscription:", error);
+      // Fallback to localStorage if Firebase fails
+      if (window.memeCanvasItems) {
+        setCanvasItems(window.memeCanvasItems);
+      }
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    }
   }, []);
   
   const handleResize = () => {
@@ -86,24 +126,25 @@ function Canvas() {
   };
 
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Collaborative Canvas</h2>
-        <div className="flex space-x-2">
-          <button 
-            onClick={mintNFT}
-            className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-all duration-300 border border-purple-500/30"
-          >
-            Mint as NFT
-          </button>
-          <button 
-            onClick={shareOnTwitter}
-            className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-all duration-300 border border-blue-500/30"
-          >
-            Share on X
-          </button>
+    <ErrorBoundary>
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Collaborative Canvas</h2>
+          <div className="flex space-x-2">
+            <button 
+              onClick={mintNFT}
+              className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-all duration-300 border border-purple-500/30"
+            >
+              Mint as NFT
+            </button>
+            <button 
+              onClick={shareOnTwitter}
+              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-all duration-300 border border-blue-500/30"
+            >
+              Share on X
+            </button>
+          </div>
         </div>
-      </div>
       
       <div 
         ref={canvasRef}
@@ -160,6 +201,7 @@ function Canvas() {
         <p>Current items on canvas: {canvasItems.length}</p>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
 

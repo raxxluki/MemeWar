@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useAccount } from "wagmi";
+import { addCanvasItem } from "../firebase";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 function MemeGenerator() {
   const { address } = useAccount();
@@ -9,7 +11,7 @@ function MemeGenerator() {
   const [generatedImage, setGeneratedImage] = useState(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   
-  // Mock image generation - in a real app this would call an AI API
+  // Enhanced mock image generation with keyword mapping
   const generateMemeImage = () => {
     if (!description.trim()) {
       alert("Please enter a description for your meme");
@@ -18,85 +20,135 @@ function MemeGenerator() {
     
     setIsGenerating(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
-      // Use pre-generated images for demo
-      const imageUrl = memeType === 'doge' 
-        ? 'images/doge-space.webp' 
-        : 'images/pepe-king.webp';
+    try {
+      // Keyword to image mapping
+      const dogeKeywords = {
+        'space': 'images/doge-space.webp',
+        'moon': 'images/doge-space.webp',
+        'rocket': 'images/doge-space.webp',
+        'astronaut': 'images/doge-space.webp',
+        'galaxy': 'images/doge-space.webp',
+        // Add more keywords as needed
+      };
       
-      setGeneratedImage(imageUrl);
+      const pepeKeywords = {
+        'king': 'images/pepe-king.webp',
+        'crown': 'images/pepe-king.webp',
+        'royal': 'images/pepe-king.webp',
+        'throne': 'images/pepe-king.webp',
+        'kingdom': 'images/pepe-king.webp',
+        // Add more keywords as needed
+      };
+      
+      // Parse description for keywords
+      const keywords = memeType === 'doge' ? dogeKeywords : pepeKeywords;
+      const descriptionLower = description.toLowerCase();
+      
+      // Find matching keyword
+      let imageUrl = null;
+      for (const [keyword, url] of Object.entries(keywords)) {
+        if (descriptionLower.includes(keyword)) {
+          imageUrl = url;
+          break;
+        }
+      }
+      
+      // Fallback to default if no keyword matches
+      if (!imageUrl) {
+        imageUrl = memeType === 'doge' ? 'images/doge-space.webp' : 'images/pepe-king.webp';
+      }
+      
+      // Simulate API call delay
+      setTimeout(() => {
+        setGeneratedImage(imageUrl);
+        setIsGenerating(false);
+      }, 1500);
+    } catch (error) {
+      console.error("Error generating meme image:", error);
+      alert("There was an error generating your meme. Please try again.");
       setIsGenerating(false);
-    }, 1500);
+    }
   };
   
-  const addToCanvas = () => {
+  const addToCanvas = async () => {
     if (!generatedImage) return;
     
-    // Generate random position if not set
-    const randomX = Math.floor(Math.random() * 800);
-    const randomY = Math.floor(Math.random() * 800);
-    
-    const newItem = {
-      imageUrl: generatedImage,
-      description: description,
-      team: memeType,
-      creator: address,
-      timestamp: Date.now(),
-      x: position.x || randomX,
-      y: position.y || randomY,
-      width: 150,
-      height: 150
-    };
-    
-    // Add to global state
-    window.memeCanvasItems = [...window.memeCanvasItems, newItem];
-    
-    // Save to localStorage
-    localStorage.setItem('memeWarCanvas', JSON.stringify(window.memeCanvasItems));
-    
-    // Update team scores
-    if (memeType === 'doge') {
-      window.teamScores.doge += 1;
-    } else {
-      window.teamScores.pepe += 1;
+    try {
+      // Generate random position if not set
+      const randomX = Math.floor(Math.random() * 800);
+      const randomY = Math.floor(Math.random() * 800);
+      
+      const newItem = {
+        imageUrl: generatedImage,
+        description: description,
+        team: memeType,
+        creator: address,
+        timestamp: Date.now(),
+        x: position.x || randomX,
+        y: position.y || randomY,
+        width: 150,
+        height: 150
+      };
+      
+      // Add to Firebase
+      await addCanvasItem(newItem);
+      
+      // For backward compatibility, also update local state
+      // Firebase subscription will update the UI automatically
+      if (!window.memeCanvasItems) {
+        window.memeCanvasItems = [];
+      }
+      
+      // Update team scores
+      if (!window.teamScores) {
+        window.teamScores = { doge: 50, pepe: 50 };
+      }
+      
+      if (memeType === 'doge') {
+        window.teamScores.doge += 1;
+      } else {
+        window.teamScores.pepe += 1;
+      }
+      
+      // Normalize scores to percentages
+      const total = window.teamScores.doge + window.teamScores.pepe;
+      window.teamScores.doge = Math.round((window.teamScores.doge / total) * 100);
+      window.teamScores.pepe = Math.round((window.teamScores.pepe / total) * 100);
+      
+      // Save scores
+      localStorage.setItem('memeWarScores', JSON.stringify(window.teamScores));
+      
+      // Update leaderboard
+      let leaderboard = window.leaderboard || [];
+      const existingEntry = leaderboard.find(entry => entry.address === address);
+      
+      if (existingEntry) {
+        existingEntry.score += 10;
+      } else {
+        leaderboard.push({
+          address: address,
+          score: 10,
+          team: memeType
+        });
+      }
+      
+      // Sort leaderboard by score
+      leaderboard.sort((a, b) => b.score - a.score);
+      
+      // Save leaderboard
+      window.leaderboard = leaderboard;
+      localStorage.setItem('memeWarLeaderboard', JSON.stringify(leaderboard));
+      
+      // Reset form
+      setGeneratedImage(null);
+      setDescription('');
+      
+      // Show success message
+      alert("Your meme has been added to the canvas!");
+    } catch (error) {
+      console.error("Error adding meme to canvas:", error);
+      alert("There was an error adding your meme to the canvas. Please try again.");
     }
-    
-    // Normalize scores to percentages
-    const total = window.teamScores.doge + window.teamScores.pepe;
-    window.teamScores.doge = Math.round((window.teamScores.doge / total) * 100);
-    window.teamScores.pepe = Math.round((window.teamScores.pepe / total) * 100);
-    
-    // Save scores
-    localStorage.setItem('memeWarScores', JSON.stringify(window.teamScores));
-    
-    // Update leaderboard
-    let leaderboard = window.leaderboard || [];
-    const existingEntry = leaderboard.find(entry => entry.address === address);
-    
-    if (existingEntry) {
-      existingEntry.score += 10;
-    } else {
-      leaderboard.push({
-        address: address,
-        score: 10,
-        team: memeType
-      });
-    }
-    
-    // Sort leaderboard by score
-    leaderboard.sort((a, b) => b.score - a.score);
-    
-    // Save leaderboard
-    window.leaderboard = leaderboard;
-    localStorage.setItem('memeWarLeaderboard', JSON.stringify(leaderboard));
-    
-    // Reset form
-    setGeneratedImage(null);
-    setDescription('');
-    
-    // Show success message
-    alert("Your meme has been added to the canvas!");
   };
   
   const shareOnTwitter = () => {
@@ -108,6 +160,7 @@ function MemeGenerator() {
   };
 
   return (
+    <ErrorBoundary>
     <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
       <h2 className="text-2xl font-bold mb-4">Create Your Meme</h2>
       
@@ -222,6 +275,7 @@ function MemeGenerator() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
 
