@@ -5,13 +5,13 @@ import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs }
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // Replace with your Firebase API key
-  authDomain: "memewar-canvas.firebaseapp.com",
-  projectId: "memewar-canvas",
-  storageBucket: "memewar-canvas.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef1234567890",
-  measurementId: "G-ABCDEFGHIJ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY", // Replace with your Firebase API key
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "memewar-canvas.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "memewar-canvas",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "memewar-canvas.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef1234567890",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-ABCDEFGHIJ"
 };
 
 // Initialize Firebase
